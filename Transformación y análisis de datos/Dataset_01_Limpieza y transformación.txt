@@ -1,0 +1,14 @@
+let
+    Origen = Csv.Document(File.Contents("C:\TFM\D1.csv"), [Delimiter=";", Columns=4, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+    #"Encabezados promovidos" = Table.PromoteHeaders(Origen, [PromoteAllScalars=true]),
+    #"Tipo cambiado" = Table.TransformColumnTypes(#"Encabezados promovidos",{
+        {"Comunidades y Ciudades Autónomas de destino", type text},
+        {"País de residencia", type text},
+        {"Periodo", Int64.Type},
+        {"Total", type number}
+    }),
+    #"Errores quitados" = Table.RemoveRowsWithErrors(#"Tipo cambiado", {"Total"}),
+    #"Filas filtradas" = Table.SelectRows(#"Errores quitados", each ([País de residencia] <> "Total") and ([Total] <> ".")),
+    #"Rename columns" = Table.RenameColumns(#"Filas filtradas",{{"Comunidades y Ciudades Autónomas de destino", "Destino"}, {"Periodo", "Anyo"}, {"Total", "Gasto medio diario por visitante"}, {"País de residencia", "Origen"}})
+in
+    #"Rename columns"

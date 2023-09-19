@@ -1,0 +1,11 @@
+let
+    Origen = Table.NestedJoin(D1, {"Origen", "Destino", "Anyo"}, D2, {"Origen", "Destino", "Anyo"}, "D2", JoinKind.Inner),
+    #"Cross data" = Table.ExpandTableColumn(Origen, "D2", {"Continentes", "Destino_Provincia", "Concepto", "Total", "Mes", "Mes_Nombre"}, {"Origen_Continente", "Destino_Provincia", "Concepto", "Total", "Mes", "Mes_Nombre"}),
+    #"Personalizada agregada" = Table.AddColumn(#"Cross data", "Pivoteado", each Table.Pivot(#"Cross data", List.Distinct(#"Cross data"[Concepto]), "Concepto", "Total")),
+    Pivoteado = #"Personalizada agregada"{0}[Pivoteado],
+    #"Order columns" = Table.ReorderColumns(Pivoteado,{"Origen_Continente", "Origen", "Destino", "Destino_Provincia", "Anyo", "Mes", "Mes_Nombre", "Duración media de los viajes", "Gasto medio diario por visitante", "Turistas", "Pernoctaciones"}),
+    #"Columnas con nombre cambiado" = Table.RenameColumns(#"Order columns",{{"Duración media de los viajes", "Tiempo_Medio_Estancia"}, {"Gasto medio diario por visitante", "Gasto_Medio_Diario_PorVisitante"}, {"Turistas", "Total_Turistas"}, {"Pernoctaciones", "Total_Pernoctaciones"}}),
+    Combinar = (Separator, row) => Text.Combine({row[Origen_Continente], row[Origen], row[Destino], row[Destino_Provincia], Text.From(row[Anyo]), Text.From(row[Mes]), row[Mes_Nombre], Text.From(row[Tiempo_Medio_Estancia]), Text.From(row[Gasto_Medio_Diario_PorVisitante]), Text.From(row[Total_Turistas]), Text.From(row[Total_Pernoctaciones])}, Separator),
+    #"AplicarCombinacion" = Table.AddColumn(#"Columnas con nombre cambiado", "Combined", each Combinar(";", _))
+in
+    AplicarCombinacion

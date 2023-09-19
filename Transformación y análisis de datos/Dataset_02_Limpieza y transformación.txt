@@ -1,0 +1,82 @@
+let
+    Origen = Csv.Document(File.Contents("C:\TFM\D2.csv"),[Delimiter=";", Columns=7, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+    #"Encabezados promovidos" = Table.PromoteHeaders(Origen, [PromoteAllScalars=true]),
+    #"Tipo cambiado" = Table.TransformColumnTypes(#"Encabezados promovidos",{{"RESIDENCIA/ORIGEN", type text}, {"Continentes", type text}, {"Países", type text}, {"Provincia de destino", type text}, {"Concepto turístico", type text}, {"Periodo", type text}, {"Total", type number}}),
+    #"Columnas quitadas" = Table.RemoveColumns(#"Tipo cambiado",{"RESIDENCIA/ORIGEN"}),
+    #"Filtrado1" = Table.SelectRows(#"Columnas quitadas", each ([Países] <> "")),
+    #"Errores quitados" = Table.RemoveRowsWithErrors(#"Filtrado1", {"Total"}),
+    #"Filtrado2" = Table.SelectRows(#"Errores quitados", each ([Provincia de destino] <> "Total Nacional") and ([Total] <> null)),
+    #"NewColumn CCAA_Destino" = Table.AddColumn(#"Filtrado2", "CCAA_Destino", each if [Provincia de destino] = "Alicante/Alacant" then "Comunitat Valenciana"
+        else if [Provincia de destino] = "Balears, Illes" then "Balears, Illes"
+        else if [Provincia de destino] = "Barcelona" then "Cataluña"
+        else if [Provincia de destino] = "Bizkaia" then "País Vasco"
+        else if [Provincia de destino] = "Cantabria" then "Cantabria"
+        else if [Provincia de destino] = "Castellón/Castelló" then "Comunitat Valenciana"
+        else if [Provincia de destino] = "Girona" then "Cataluña"
+        else if [Provincia de destino] = "Granada" then "Andalucía"
+        else if [Provincia de destino] = "Lleida" then "Cataluña"
+        else if [Provincia de destino] = "Madrid" then "Comunidad de Madrid"
+        else if [Provincia de destino] = "Málaga" then "Andalucía"
+        else if [Provincia de destino] = "Palmas, Las" then "Canarias"
+        else if [Provincia de destino] = "Santa Cruz de Tenerife" then "Canarias"
+        else if [Provincia de destino] = "Tarragona" then "Cataluña"
+        else if [Provincia de destino] = "Valencia/València" then "Comunitat Valenciana"
+        else if [Provincia de destino] = "Albacete" then "Castilla - La Mancha"
+        else if [Provincia de destino] = "Almería" then "Andalucía"
+        else if [Provincia de destino] = "Araba/Álava" then "País Vasco"
+        else if [Provincia de destino] = "Asturias" then "Asturias, Principado de"
+        else if [Provincia de destino] = "Ávila" then "Castilla y León"
+        else if [Provincia de destino] = "Badajoz" then "Extremadura"
+        else if [Provincia de destino] = "Burgos" then "Castilla y León"
+        else if [Provincia de destino] = "Cáceres" then "Extremadura"
+        else if [Provincia de destino] = "Cádiz" then "Andalucía"
+        else if [Provincia de destino] = "Ceuta" then "Ciudad Autónoma de Ceuta"
+        else if [Provincia de destino] = "Ciudad Real" then "Castilla - La Mancha"
+        else if [Provincia de destino] = "Córdoba" then "Andalucía"
+        else if [Provincia de destino] = "Coruña, A" then "Galicia"
+        else if [Provincia de destino] = "Cuenca" then "Castilla - La Mancha"
+        else if [Provincia de destino] = "Gipuzkoa" then "País Vasco"
+        else if [Provincia de destino] = "Guadalajara" then "Castilla - La Mancha"
+        else if [Provincia de destino] = "Huelva" then "Andalucía"
+        else if [Provincia de destino] = "Huesca" then "Aragón"
+        else if [Provincia de destino] = "Jaén" then "Andalucía"
+        else if [Provincia de destino] = "León" then "Castilla y León"
+        else if [Provincia de destino] = "Lugo" then "Galicia"
+        else if [Provincia de destino] = "Melilla" then "Melilla"
+        else if [Provincia de destino] = "Murcia" then "Murcia, Región de"
+        else if [Provincia de destino] = "Navarra" then "Navarra, Comunidad Foral de"
+        else if [Provincia de destino] = "Ourense" then "Galicia"
+        else if [Provincia de destino] = "Palencia" then "Castilla y León"
+        else if [Provincia de destino] = "Pontevedra" then "Galicia"
+        else if [Provincia de destino] = "Rioja, La" then "Rioja, La"
+        else if [Provincia de destino] = "Salamanca" then "Castilla y León"
+        else if [Provincia de destino] = "Segovia" then "Castilla y León"
+        else if [Provincia de destino] = "Sevilla" then "Andalucía"
+        else if [Provincia de destino] = "Soria" then "Castilla y León"
+        else if [Provincia de destino] = "Teruel" then "Aragón"
+        else if [Provincia de destino] = "Toledo" then "Castilla - La Mancha"
+        else if [Provincia de destino] = "Valladolid" then "Castilla y León"
+        else if [Provincia de destino] = "Zamora" then "Castilla y León"
+        else if [Provincia de destino] = "Zaragoza" then "Aragón"
+        else ""),    
+    #"NewColumn Anyo" = Table.AddColumn(#"NewColumn CCAA_Destino", "Anyo", each Text.Start([Periodo], 4)),
+    #"NewColumn Mes" = Table.AddColumn(#"NewColumn Anyo", "Mes", each Text.Middle([Periodo], 5, 2)),
+    #"Tipo cambiado1" = Table.TransformColumnTypes(#"NewColumn Mes",{{"CCAA_Destino", type text}, {"Anyo", Int64.Type}, {"Mes", Int64.Type}}),
+    #"NewColumn Mes_nombre" = Table.AddColumn(#"Tipo cambiado1", "Mes_nombre", 
+            each if [Mes] = 1 then "Enero"
+            else if [Mes] = 2 then "Febrero"
+            else if [Mes] = 3 then "Marzo"
+            else if [Mes] = 4 then "Abril"
+            else if [Mes] = 5 then "Mayo"
+            else if [Mes] = 6 then "Junio"
+            else if [Mes] = 7 then "Julio"
+            else if [Mes] = 8 then "Agosto"
+            else if [Mes] = 9 then "Septiembre"
+            else if [Mes] = 10 then "Octubre"
+            else if [Mes] = 11 then "Noviembre"
+            else if [Mes] = 12 then "Diciembre"
+            else ""),
+    #"Rename columns" = Table.RenameColumns(#"NewColumn Mes_nombre",{{"CCAA_Destino", "Destino"}, {"Concepto turístico", "Concepto"}, {"Países", "Origen"}, {"Provincia de destino", "Destino_Provincia"}, {"Mes_nombre", "Mes_Nombre"}}),
+    #"Tipo cambiado2" = Table.TransformColumnTypes(#"Rename columns",{{"Mes_Nombre", type text}})
+in
+    #"Tipo cambiado2"
