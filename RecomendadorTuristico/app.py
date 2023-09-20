@@ -63,15 +63,15 @@ if tab == "Obtener recomendacion":
     st.table(recommendations_result)    
 
     # CROSS-VALIDATION
-    avg_mse, avg_accuracy = None, None
-    avg_mse, avg_accuracy = se.perform_cross_validation(dataset, user_origin, user_month, min_days, max_days, min_expense, max_expense)
+    avg_mae, avg_accuracy = None, None
+    avg_mae, avg_accuracy = se.perform_cross_validation(dataset, user_origin, user_month, min_days, max_days, min_expense, max_expense)
 
-    if avg_mse is not None and avg_accuracy is not None:
-        st.write(f"Promedio de Error Cuadrático Medio (MSE): {avg_mse:.2f}")
+    if avg_mae is not None and avg_accuracy is not None:
+        st.write(f"Promedio de Error Absoluto Medio (MAE): {avg_mae:.2f}")
         st.write(f"Promedio de Exactitud (Accuracy): {avg_accuracy:.2f}%")
-    elif avg_mse is not None and avg_accuracy is None:
-        st.write(f"Promedio de Error Cuadrático Medio (MSE): {avg_mse:.2f}")
-    elif avg_mse is None and avg_accuracy is not None:
+    elif avg_mae is not None and avg_accuracy is None:
+        st.write(f"Promedio de Error Absoluto Medio (MAE): {avg_mae:.2f}")
+    elif avg_mae is None and avg_accuracy is not None:
         st.write(f"Promedio de Exactitud (Accuracy): {avg_accuracy:.2f}%")
     else:
         st.write("No hay suficientes datos para evaluar la precisión  y la exactitud.") 
