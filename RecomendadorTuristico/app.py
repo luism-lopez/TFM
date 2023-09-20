@@ -1,11 +1,11 @@
 import pandas as pd
 import streamlit as st
 import dataManagment as md
+import systemEvaluation as se
 import algorithm
 import logging
 
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
 
 
 # CONFIGURE LOG FILE
@@ -26,7 +26,7 @@ tab = st.sidebar.radio(
     "Obtener recomendacion",
     "Consultar historico"
 ))
-    
+
 
 # TAB 1
 if tab == "Obtener recomendacion":
@@ -34,11 +34,11 @@ if tab == "Obtener recomendacion":
     st.markdown("<h2 style='text-align: center;'>Obtener recomendacion</h2>", unsafe_allow_html=True)
     
     # FILTER
-    user_origin = st.selectbox("Pais de Origen:", sorted(train_data['Origen'].unique()))    
-    user_month_selection = st.selectbox("Mes de Viaje:", sorted(train_data['Mes'].unique()), format_func=lambda x: f"{x} - {train_data[train_data['Mes'] == x]['Mes_Nombre'].iloc[0]}")
+    user_origin = st.selectbox("Pais de Origen:", sorted(dataset['Origen'].unique()))    
+    user_month_selection = st.selectbox("Mes de Viaje:", sorted(dataset['Mes'].unique()), format_func=lambda x: f"{x} - {dataset[dataset['Mes'] == x]['Mes_Nombre'].iloc[0]}")
     user_month = int(str(user_month_selection).split(' - ')[0])   
     user_days = st.number_input("Dias de Duracion:", min_value=3)    
-    user_expense = st.number_input("Gasto Diario Previsto:", min_value=50.0, step=1.0)
+    user_expense = st.number_input("Gasto Diario Previsto:", min_value=50.0, step=10.0)
     
     # DEFINE RANGE FOR DAYS AND EXPENSES
     min_days = max(3, user_days - 5)
@@ -60,26 +60,22 @@ if tab == "Obtener recomendacion":
 
     # SHOW RECOMENDATIONS
     st.markdown("</br><h3 style='text-align: left;'>Resultados:</h3>", unsafe_allow_html=True)
-    st.table(recommendations_result)
-    
-    # CALCULATE MSE (error cuadratico medio) BETWEEN train_recomendations AND test_recomendations
-    if train_recommendations and test_recommendations:
-        train_score = train_recommendations[0][2]
-        test_score = test_recommendations[0][2]
+    st.table(recommendations_result)    
 
-        if not pd.isna(train_score) and not pd.isna(test_score):
-            mse = mean_squared_error([train_score], [test_score])
-            st.write(f"El error calculado entre train_recommendations y test_recommendations es de: {mse:.2f}")
-        else:
-            st.write("Insuficientes datos en el conjunto de prueba, no se puede evaluar el resultado.")
-            
-    elif not train_recommendations and test_recommendations:
-        st.write("El conjunto de entrenamiento no tiene recomendaciones, no se puede evaluar el resultado.")         
-    elif train_recommendations and not test_recommendations:
-        st.write("El conjunto de prueba no tiene recomendaciones, no se puede evaluar el resultado.")        
+    # CROSS-VALIDATION
+    avg_mse, avg_accuracy = None, None
+    avg_mse, avg_accuracy = se.perform_cross_validation(dataset, user_origin, user_month, min_days, max_days, min_expense, max_expense)
+
+    if avg_mse is not None and avg_accuracy is not None:
+        st.write(f"Promedio de Error Cuadrático Medio (MSE): {avg_mse:.2f}")
+        st.write(f"Promedio de Exactitud (Accuracy): {avg_accuracy:.2f}%")
+    elif avg_mse is not None and avg_accuracy is None:
+        st.write(f"Promedio de Error Cuadrático Medio (MSE): {avg_mse:.2f}")
+    elif avg_mse is None and avg_accuracy is not None:
+        st.write(f"Promedio de Exactitud (Accuracy): {avg_accuracy:.2f}%")
     else:
-        st.write("Tanto el conjunto de entrenamiento como el conjunto de prueba están vacíos, no se puede evaluar el resultado.")
-
+        st.write("No hay suficientes datos para evaluar la precisión  y la exactitud.") 
+    
     # CALIFICATION
     st.markdown("</br><h3 style='text-align: left; padding-bottom: 0;'>Puntua la recomendacion:</h3>", unsafe_allow_html=True)
     user_rating = st.slider("", 1, 5, 5)
@@ -102,8 +98,8 @@ if tab == "Obtener recomendacion":
             if dataset[mask].empty:
                 logging.warning(f"No se encontraron coincidencias para la recomendación {destination} en el dataset.")
             else:
-                dataset.loc[mask, 'Calificacion'] = user_rating     
-        
+                dataset.loc[mask, 'Calificacion'] = user_rating   
+
                 
 # TAB 2
 elif tab == "Consultar historico":
